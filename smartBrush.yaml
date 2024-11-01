@@ -1,0 +1,12 @@
+device: mps  # 或者使用其他选项
+timesteps: 500
+beta1: 1e-4
+beta2: 0.02
+n_feat: 128
+batch_size: 1
+epochs: 101
+lr: 1e-3
+gamma: 0.01
+image_size: 32  # 低分辨率以节省计算资源
+height: 32
+checkpoint_dir: './checkpoint'
