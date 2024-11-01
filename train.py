@@ -84,7 +84,7 @@ def main():
             f_loss = F.mse_loss(pred_noise, noise)
     
             loss = d_loss*0.01 + f_loss
-            #print(f'mask_loss = {d_loss}, ordinary diffusion loss ={f_loss}')
+            print(f'mask_loss = {d_loss}, ordinary diffusion loss ={f_loss}')
             loss.backward()
             optim.step()
 
