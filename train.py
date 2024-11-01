@@ -32,7 +32,7 @@ def main():
     image_size=32 # no computing power for 256 need high computing power 
     height =image_size
 
-    checkpoint_dir ='/Users/chenyufeng/Desktop/smartBrush/checkpoint'
+    checkpoint_dir ='./checkpoint'
     model = Unet(in_channels=3, n_feat=n_feat, n_cfeat=512, height=height).to(device)
     optim = torch.optim.Adam(model.parameters(), lr=lrate)
     diss_loss=DiceLoss(device)
