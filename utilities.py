@@ -122,6 +122,17 @@ def norm_torch(x_all):
     nstore = (x - xmin)/(xmax - xmin)
     return torch.from_numpy(nstore)
 
+def get_file_basename(file_path):
+    return os.path.splitext(os.path.basename(file_path))[0]
+
+def get_all_files_recursive(directory):
+    files = []
+    for root, _, filenames in os.walk(directory):
+        for filename in filenames:
+            files.append(os.path.join(root, filename))
+    return files
+
+
 def perturb_input(x, t, noise,ab_t):
     return ab_t.sqrt()[t, None, None, None] * x + (1 - ab_t[t, None, None, None]) * noise
 

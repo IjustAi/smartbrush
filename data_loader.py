@@ -29,7 +29,6 @@ class MaskedImageDataset(Dataset):
             transforms.Resize((self.image_size,self.image_size)), 
             transforms.Grayscale(num_output_channels=1),
             transforms.ToTensor(),
-            transforms.Normalize((0.5,), (0.5,))
         ])
 
         self.s_set = []
@@ -46,7 +45,6 @@ class MaskedImageDataset(Dataset):
         mask_image = Image.open(self.mask_image_path).resize((self.image_size, self.image_size))
         self.mask = torch.tensor(np.array(mask_image).astype(np.float32) / 255.0).permute(2, 0, 1).to(self.device)
 
-
         to_gray = transforms.Grayscale(num_output_channels=1)
         self.mask = to_gray(self.mask)
         self.mask = (torch.sigmoid(self.mask) > 0.5).float()
@@ -56,7 +54,8 @@ class MaskedImageDataset(Dataset):
 
     def __getitem__(self, idx):
         mask_array = self.s_set[idx]
-        train_data = self.transform(Image.fromarray((mask_array * 255).astype(np.uint8)))  
-        label = self.text_embeddings.to(self.device)  
+        train_data = self.transform(Image.fromarray((mask_array * 255).astype(np.uint8))) 
+        train_data = (train_data > 0.5).float()   
+        label = self.text_embeddings.to(self.device) 
 
         return train_data, label, self.x0, self.mask

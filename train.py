@@ -1,4 +1,5 @@
 import torch
+import os 
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
@@ -37,17 +38,37 @@ def main():
     optim = torch.optim.Adam(model.parameters(), lr=lrate)
     diss_loss=DiceLoss(device)
 
-    x0_path = '/Users/chenyufeng/desktop/girl_data/2.png'
-    mask_path = '/Users/chenyufeng/desktop/girl_data/1.png'
     levels = [41, 81, 121, 161, 201, 241, 281, 321, 361,401]
-    label ='hummingbird'
-    dataset = MaskedImageDataset(x0_path, mask_path, levels,label,batch_size,image_size,device)
-    label1 ='girl'
-    dataset1 = MaskedImageDataset('/Users/chenyufeng/desktop/girl_data/girl.png', '/Users/chenyufeng/desktop/girl_data/girl_mask.png', levels,label1,batch_size,image_size,device)
-    combined_dataset = ConcatDataset([dataset, dataset1])
-    dataloader = DataLoader(combined_dataset, batch_size=batch_size, shuffle=True)
-    #dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-  
+    folder_path_1 = '/Users/chenyufeng/desktop/segtrackv2/JPEGImages'
+    folder_path_2 = '/Users/chenyufeng/desktop/segtrackv2/GroundTruth'
+    dataset = []
+
+    for subfolder in os.listdir(folder_path_1):
+        label = subfolder
+        subfolder_path_1 = os.path.join(folder_path_1, subfolder)
+        if os.path.isdir(subfolder_path_1):
+            for file_name in os.listdir(subfolder_path_1):
+                file_path_1 = os.path.join(subfolder_path_1, file_name)  
+                file_basename_1 = get_file_basename(file_path_1)
+
+                subfolder_path_2 = os.path.join(folder_path_2, subfolder)
+
+                if os.path.exists(subfolder_path_2):
+                    ground_truth_files = get_all_files_recursive(subfolder_path_2)
+                    for ground_truth_file_path in ground_truth_files:
+                        file_basename_2 = get_file_basename(ground_truth_file_path)
+                        if file_basename_2 == file_basename_1:
+                            sub_dataset = MaskedImageDataset(file_path_1, ground_truth_file_path, levels, label, batch_size, image_size, device)
+                            dataset.append(sub_dataset)
+                else:
+                    print(f"GroundTruth subfolder {subfolder_path_2} does not exist.")
+   
+    dataset = ConcatDataset(dataset)
+
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+
+    model.train()
     for epoch in range(epochs):
         print(f'epoch {epoch}')
         optim.param_groups[0]['lr'] = lrate * (1 - epoch / epochs)
@@ -79,12 +100,11 @@ def main():
 
             pred_noise, pred_mask = model(xt, t/ timesteps , c, x)
             pred_mask = (torch.sigmoid(pred_mask)>0.5).float()
-
             d_loss = diss_loss(pred_mask, mask)
             f_loss = F.mse_loss(pred_noise, noise)
     
             loss = d_loss*0.01 + f_loss
-            print(f'mask_loss = {d_loss}, ordinary diffusion loss ={f_loss}')
+            #print(f'mask_loss = {d_loss}, ordinary diffusion loss ={f_loss}')
             loss.backward()
             optim.step()
 
