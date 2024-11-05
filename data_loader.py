@@ -1,5 +1,6 @@
 import torch
 import os
+import gc
 import cv2
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,19 +12,17 @@ from PIL import Image
 from different_level_mask import GaussianBlur
 
 class MaskedImageDataset(Dataset):
-    def __init__(self, original_image_path, mask_image_path, levels, text_label, batch_size, image_size, device):
+    def __init__(self, original_image_path, mask_image_path, levels, text_label, batch_size, image_size, device, processor, model):
         self.original_image_path = original_image_path
         self.mask_image_path = mask_image_path
         self.levels = levels
         self.batch_size = batch_size
         self.image_size = image_size
         self.device = device
-        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch16")
-        self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch16")
 
-        inputs = self.processor(text=text_label, return_tensors="pt", padding=True, truncation=True)
+        inputs = processor(text=text_label, return_tensors="pt", padding=True, truncation=True)
         with torch.no_grad():
-            self.text_embeddings = self.model.get_text_features(**inputs).squeeze(0)  
+            self.text_embeddings = model.get_text_features(**inputs).squeeze(0)
 
         self.transform = transforms.Compose([
             transforms.Resize((self.image_size,self.image_size)), 
@@ -35,7 +34,7 @@ class MaskedImageDataset(Dataset):
         
         for level in self.levels:
             mask_s = GaussianBlur(mask_image_path, level, 0)
-            mask_s_array = np.array(mask_s).astype(np.float32) / 255.0  
+            mask_s_array = np.array(mask_s).astype(np.float32) / 255.0
             self.s_set.append(mask_s_array)
 
         x0 = Image.open(self.original_image_path).resize((self.image_size, self.image_size))
@@ -56,6 +55,8 @@ class MaskedImageDataset(Dataset):
         mask_array = self.s_set[idx]
         train_data = self.transform(Image.fromarray((mask_array * 255).astype(np.uint8))) 
         train_data = (train_data > 0.5).float()   
-        label = self.text_embeddings.to(self.device) 
+        label = self.text_embeddings.to(self.device)
+        del mask_array
+        gc.collect()
 
         return train_data, label, self.x0, self.mask

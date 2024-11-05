@@ -1,6 +1,45 @@
+Brotli @ file:///C:/b/abs_3d36mno480/croot/brotli-split_1714483178642/work
+certifi @ file:///C:/b/abs_1fw_exq1si/croot/certifi_1725551736618/work/certifi
+charset-normalizer @ file:///croot/charset-normalizer_1721748349566/work
+colorama==0.4.6
+contourpy==1.3.0
+cycler==0.12.1
+filelock @ file:///C:/b/abs_f2gie28u58/croot/filelock_1700591233643/work
+fonttools==4.54.1
+fsspec==2024.10.0
+gmpy2 @ file:///C:/ci/gmpy2_1645455782955/work
+huggingface-hub==0.26.2
+idna==3.10
+importlib_resources==6.4.5
+Jinja2 @ file:///C:/b/abs_92fccttino/croot/jinja2_1716993447201/work
+kiwisolver==1.4.7
+MarkupSafe @ file:///C:/b/abs_ecfdqh67b_/croot/markupsafe_1704206030535/work
+matplotlib==3.5.3
+mkl-service==2.4.0
+mkl_fft @ file:///C:/b/abs_f55mv94vyg/croot/mkl_fft_1725370278455/work
+mkl_random @ file:///C:/b/abs_21ydbzdu8d/croot/mkl_random_1725370276095/work
+mpmath @ file:///C:/b/abs_7833jrbiox/croot/mpmath_1690848321154/work
+networkx @ file:///C:/b/abs_3bxnu56g9d/croot/networkx_1717597507456/work
+numpy==1.21.6
+opencv-python==4.10.0.84
+packaging==24.1
+pillow @ file:///C:/b/abs_32o8er3uqp/croot/pillow_1721059447598/work
+pyparsing==3.2.0
+PySocks @ file:///C:/ci/pysocks_1605307512533/work
+python-dateutil==2.9.0.post0
+PyYAML @ file:///C:/b/abs_14xkfs39bx/croot/pyyaml_1728657968772/work
+regex==2024.9.11
+requests @ file:///C:/b/abs_9frifg92q2/croot/requests_1721410901096/work
+safetensors==0.4.5
+six==1.16.0
+sympy @ file:///C:/b/abs_4e4p71hdj_/croot/sympy_1724938208509/work
+tokenizers==0.20.1
 torch==2.1.0
-torchvision
-numpy
-Pillow
-tqdm
-transformers
+torchaudio==2.1.0
+torchvision==0.16.0
+tqdm==4.66.6
+transformers==4.46.1
+typing_extensions @ file:///C:/b/abs_0as9mdbkfl/croot/typing_extensions_1715268906610/work
+urllib3 @ file:///C:/b/abs_9a_f8h_bn2/croot/urllib3_1727769836930/work
+win-inet-pton @ file:///C:/ci/win_inet_pton_1605306162074/work
+zipp==3.20.2
