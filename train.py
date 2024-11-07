@@ -1,5 +1,6 @@
 import torch
 import os 
+import gc
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
@@ -27,27 +28,36 @@ def main():
     beta2 = 0.02
     n_feat = 128
     batch_size = 1
-    epochs = 101
+    epochs = 100
     lrate=1e-3
     gamma = 0.01
-    image_size=32 # no computing power for 256 need high computing power 
+    image_size=16 # no computing power for 256 need high computing power 
     height =image_size
 
-    checkpoint_dir ='./checkpoint'
+    checkpoint_dir ='/Users/chenyufeng/desktop/smartbrush/checkpoint'
     model = Unet(in_channels=3, n_feat=n_feat, n_cfeat=512, height=height).to(device)
     optim = torch.optim.Adam(model.parameters(), lr=lrate)
     diss_loss=DiceLoss(device)
-
-    levels = [41, 81, 121, 161, 201, 241, 281, 321, 361,401]
+    levels = [5,20,50,80,110 ]
     folder_path_1 = '/Users/chenyufeng/desktop/segtrackv2/JPEGImages'
     folder_path_2 = '/Users/chenyufeng/desktop/segtrackv2/GroundTruth'
     dataset = []
 
+    processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch16")
+    embed_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch16")
+
+
     for subfolder in os.listdir(folder_path_1):
-        label = subfolder
+        text_label = subfolder
+        inputs = processor(text=text_label, return_tensors="pt", padding=True, truncation=True)
+        with torch.no_grad():
+            text_embeddings = embed_model.get_text_features(**inputs).squeeze(0)
+              
         subfolder_path_1 = os.path.join(folder_path_1, subfolder)
         if os.path.isdir(subfolder_path_1):
             for file_name in os.listdir(subfolder_path_1):
+                if not file_name.lower().endswith('.png'):
+                    continue
                 file_path_1 = os.path.join(subfolder_path_1, file_name)  
                 file_basename_1 = get_file_basename(file_path_1)
 
@@ -58,11 +68,16 @@ def main():
                     for ground_truth_file_path in ground_truth_files:
                         file_basename_2 = get_file_basename(ground_truth_file_path)
                         if file_basename_2 == file_basename_1:
-                            sub_dataset = MaskedImageDataset(file_path_1, ground_truth_file_path, levels, label, batch_size, image_size, device)
+                            print(file_path_1)
+                            print(ground_truth_file_path)
+                        
+                            sub_dataset = MaskedImageDataset(file_path_1, ground_truth_file_path, levels, batch_size,image_size,text_embeddings,  device)
                             dataset.append(sub_dataset)
                 else:
                     print(f"GroundTruth subfolder {subfolder_path_2} does not exist.")
-   
+
+
+
     dataset = ConcatDataset(dataset)
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
@@ -70,7 +85,6 @@ def main():
 
     model.train()
     for epoch in range(epochs):
-        print(f'epoch {epoch}')
         optim.param_groups[0]['lr'] = lrate * (1 - epoch / epochs)
         
         pbar = tqdm(dataloader, mininterval=2)
@@ -83,28 +97,34 @@ def main():
         x->model->y  diceloss(y,mask)
         '''
         for x, c, x0,mask in pbar:
-            
             optim.zero_grad()
             x = x.to(device)
             c = c.to(x)
-
+        
             context_mask = torch.bernoulli(torch.zeros(c.shape[0]) + 0.9).to(device)
             c = c * context_mask.unsqueeze(-1)
 
             noise = torch.randn_like(x0)
 
             t = torch.randint(1, timesteps + 1, (x.shape[0],)).to(device)
-
+            mask_background= (mask>0.5).float()
             xt = perturb_input(x0, t, noise,ab_t)
-            xt = xt * mask + x0 * (1 - mask)
+            xt = xt * mask_background + x0 * (1 - mask_background)
 
             pred_noise, pred_mask = model(xt, t/ timesteps , c, x)
-            pred_mask = (torch.sigmoid(pred_mask)>0.5).float()
-            d_loss = diss_loss(pred_mask, mask)
-            f_loss = F.mse_loss(pred_noise, noise)
+            pred_mask = (torch.sigmoid(pred_mask)).float()
+            pred_mask_background = (pred_mask>0.5).float()
+
+            pred_mask_1= pred_mask.detach().cpu().numpy()[0, 0]  
+            plt.imshow(pred_mask_1, cmap='gray')
+            plt.title(f"predction mask ")
+            plt.show()
+    
+            d_loss = diss_loss(pred_mask ,mask_background)
+            f_loss =mse_loss(pred_noise * mask_background, noise * mask_background)
     
             loss = d_loss*0.01 + f_loss
-            #print(f'mask_loss = {d_loss}, ordinary diffusion loss ={f_loss}')
+            print(f'mask_loss = {d_loss}, ordinary diffusion loss ={f_loss}')
             loss.backward()
             optim.step()
 
@@ -113,8 +133,9 @@ def main():
 
         print(f"Epoch {epoch+1} finished with loss {avg_loss:.4f}")
 
-        if (epoch + 1) % 100 == 0:
-            checkpoint_path = os.path.join(checkpoint_dir, f"model_epoch_{epoch + 1}.pth")
+        
+        checkpoint_path = os.path.join(checkpoint_dir, f"model_epoch_{epoch + 1}.pth")
+        if epoch % 20 == 0:
             save_checkpoint(model, optim, epoch + 1,avg_loss, checkpoint_path)
 
 if __name__ == '__main__':

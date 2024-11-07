@@ -5,7 +5,7 @@ from utilities import *
 import torch.nn.functional as F
 
 class Unet(nn.Module):
-    def __init__(self, in_channels, n_feat=256, n_cfeat=512, height=28):  
+    def __init__(self, in_channels, n_feat=256, n_cfeat=512, height=256):  
         super(Unet, self).__init__()
         self.in_channels = in_channels
         self.n_feat = n_feat
@@ -37,7 +37,7 @@ class Unet(nn.Module):
             nn.ReLU(),
             nn.Conv2d(n_feat, self.in_channels, 3, 1, 1),
         )
-        
+
         self.out_mask = nn.Sequential(
             nn.Conv2d(2 * n_feat, n_feat, 3, 1, 1),
             nn.GroupNorm(8, n_feat),

@@ -1,12 +1,22 @@
 import cv2
 import numpy as np
 
-# k=(1,1) must be odd number, sigma=0 won't change image
-def GaussianBlur(image_path, k, sigma):
-    image = cv2.imread(image_path)
-    image = np.array(image)
-    blurred_image = cv2.GaussianBlur(image, (k,k), sigma)
+#5 20 50 80 110 
+def GaussianBlur(image_path, num_steps):
+    mask = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 
-    return blurred_image
-    #cv2.imwrite(save_path, blurred_image)
+    _, binary_mask = cv2.threshold(mask, 128, 255, cv2.THRESH_BINARY)
+
+    contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    max_epsilon = 300 
+
+    for step in range(num_steps):
+        result = np.zeros_like(mask)
+        scale_factor = (num_steps - step) / num_steps
+        epsilon = scale_factor * max_epsilon
+        approx_contour = cv2.approxPolyDP(contours[0], epsilon=epsilon, closed=True)
+
+        cv2.drawContours(result, [approx_contour], -1, 255, thickness=cv2.FILLED)
+    bluerd_mask = np.array(result)
+    return bluerd_mask 
 
