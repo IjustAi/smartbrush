@@ -28,17 +28,18 @@ def main():
     beta2 = 0.02
     n_feat = 128
     batch_size = 1
-    epochs = 100
+    epochs = 20
     lrate=1e-3
     gamma = 0.01
-    image_size=16 # no computing power for 256 need high computing power 
+    image_size=256 # no computing power for 256 need high computing power 
     height =image_size
+    mse_loss = nn.MSELoss()
 
     checkpoint_dir ='/Users/chenyufeng/desktop/smartbrush/checkpoint'
     model = Unet(in_channels=3, n_feat=n_feat, n_cfeat=512, height=height).to(device)
     optim = torch.optim.Adam(model.parameters(), lr=lrate)
-    diss_loss=DiceLoss(device)
-    levels = [5,20,50,80,110 ]
+    dice_loss=DiceLoss(device)
+    levels = [50]
     folder_path_1 = '/Users/chenyufeng/desktop/segtrackv2/JPEGImages'
     folder_path_2 = '/Users/chenyufeng/desktop/segtrackv2/GroundTruth'
     dataset = []
@@ -115,16 +116,11 @@ def main():
             pred_mask = (torch.sigmoid(pred_mask)).float()
             pred_mask_background = (pred_mask>0.5).float()
 
-            pred_mask_1= pred_mask.detach().cpu().numpy()[0, 0]  
-            plt.imshow(pred_mask_1, cmap='gray')
-            plt.title(f"predction mask ")
-            plt.show()
-    
-            d_loss = diss_loss(pred_mask ,mask_background)
+            d_loss = dice_loss(pred_mask ,mask_background)
             f_loss =mse_loss(pred_noise * mask_background, noise * mask_background)
     
             loss = d_loss*0.01 + f_loss
-            print(f'mask_loss = {d_loss}, ordinary diffusion loss ={f_loss}')
+            #print(f'mask_loss = {d_loss}, ordinary diffusion loss ={f_loss}')
             loss.backward()
             optim.step()
 

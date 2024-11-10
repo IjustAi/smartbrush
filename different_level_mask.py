@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-#5 20 50 80 110 
+#30 50 70 80 100 
 def GaussianBlur(image_path, num_steps):
     mask = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 

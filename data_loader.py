@@ -51,7 +51,8 @@ class MaskedImageDataset(Dataset):
 
         to_gray = transforms.Grayscale(num_output_channels=1)
         self.mask = to_gray(self.mask)
-        self.mask = (torch.sigmoid(self.mask) > 0.5).float()
+        #self.mask = (torch.sigmoid(self.mask) > 0.5).float()
+        self.mask = (torch.sigmoid(self.mask)).float()
 
     def __len__(self):
         return len(self.s_set)
@@ -59,7 +60,8 @@ class MaskedImageDataset(Dataset):
     def __getitem__(self, idx):
         mask_array = self.s_set[idx]
         train_data = self.transform(Image.fromarray((mask_array * 255).astype(np.uint8))) 
-        train_data = (train_data > 0.5).float()   
+       #train_data = (train_data > 0.5).float()   
+        train_data = (train_data).float() 
         label = self.text_embed.to(self.device) 
         del mask_array
         gc.collect()
